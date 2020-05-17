@@ -36,14 +36,11 @@ type Game struct {
 
 func (g *Game) Update(screen *ebiten.Image) error {
 	screenW, screenH := screen.Size()
-	var playerDirection float64
 	if ebiten.IsKeyPressed(ebiten.KeyRight) {
-		playerDirection = 1
 		if g.p.x+g.p.w+g.p.speed <= float64(screenW) {
 			g.p.x += g.p.speed
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		playerDirection = -1
 		g.p.x -= g.p.speed
 		if g.p.x < 0 {
 			g.p.x = 0
@@ -58,11 +55,11 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		b.x += b.direction[0] * b.speed
 
 		newY := b.y + b.direction[1]*b.speed
-		collided := g.collision(b)
+		collided, ratio := g.collision(b)
 		if newY < 0 || collided {
 			b.direction[1] = -b.direction[1]
 			if collided {
-				b.direction[0] += 0.2 * playerDirection
+				b.direction[0] += ratio
 			}
 		} else if newY+2*b.radius > float64(screenH) {
 			g.initElements()
@@ -72,11 +69,40 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	return nil
 }
 
-func (g *Game) collision(b *ball) bool {
+/*
+
+ .ooxiixoo.
+ ----------
+|          |
+ ----------
+*/
+func (g *Game) collision(b *ball) (bool, float64) {
 	if b.y+2*b.radius == g.p.y && (b.x <= g.p.x+g.p.w && b.x+2*b.radius >= g.p.x) {
-		return true
+		var ratio float64
+		r := b.x + 2*b.radius
+		l := b.x
+		if l >= g.p.x && r <= g.p.x+g.p.w*10/100 {
+			// fmt.Println("<=10%")
+			ratio = -0.8
+		} else if r > g.p.x+g.p.w*10/100 && r <= g.p.x+g.p.w*30/100 {
+			// fmt.Println(">10% <=30%")
+			ratio = -0.5
+		} else if r > g.p.x+g.p.w*30/100 && r <= g.p.x+g.p.w*45/100 {
+			// fmt.Println(">30% <= 45%")
+			ratio = -0.2
+		} else if l >= g.p.x+g.p.w*55/100 && l < g.p.x+g.p.w*70/100 {
+			// fmt.Println(">=55% <70%")
+			ratio = 0.2
+		} else if l >= g.p.x+g.p.w*70/100 && l < g.p.x+g.p.w*90/100 {
+			// fmt.Println(">=70% <90%")
+			ratio = 0.5
+		} else if l <= g.p.x+g.p.w && l >= g.p.x+g.p.w*90/100 {
+			// fmt.Println(">=90%")
+			ratio = 0.8
+		}
+		return true, ratio
 	}
-	return false
+	return false, 0
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -141,7 +167,7 @@ func (g *Game) initElements() {
 		h:     float64(h),
 		x:     float64(W_WIDTH/2 - w/2),
 		y:     float64(W_HEIGHT - h - 20),
-		speed: 15,
+		speed: 10,
 		color: color.RGBA{0xff, 0x00, 0x00, 0xff},
 		image: playerImg,
 	}
