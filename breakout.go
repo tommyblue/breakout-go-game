@@ -55,7 +55,7 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		b.x += b.direction[0] * b.speed
 
 		new_y := b.y + b.direction[1]*b.speed
-		if new_y < 0 {
+		if new_y < 0 || g.collision(b) {
 			b.direction[1] = -b.direction[1]
 		} else if new_y+2*b.radius > float64(s_h) {
 			// TODO: this is the lose condition
@@ -66,6 +66,13 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		b.y += b.direction[1] * b.speed
 	}
 	return nil
+}
+
+func (g *Game) collision(b *ball) bool {
+	if b.y+2*b.radius >= g.p.y && (b.x <= g.p.x+g.p.w && b.x+2*b.radius >= g.p.x) {
+		return true
+	}
+	return false
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
