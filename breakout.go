@@ -29,9 +29,17 @@ type ball struct {
 	image     *ebiten.Image
 }
 
+type target struct {
+	w, h  float64
+	x, y  float64
+	color color.RGBA
+	image *ebiten.Image
+}
+
 type Game struct {
-	p     *player
-	balls []*ball
+	p       *player
+	balls   []*ball
+	targets []*target
 }
 
 func (g *Game) Update(screen *ebiten.Image) error {
@@ -55,7 +63,7 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		b.x += b.direction[0] * b.speed
 
 		newY := b.y + b.direction[1]*b.speed
-		collided, ratio := g.collision(b)
+		collided, ratio := g.playerBallCollision(b)
 		if newY < 0 || collided {
 			b.direction[1] = -b.direction[1]
 			if collided {
@@ -69,14 +77,7 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	return nil
 }
 
-/*
-
- .ooxiixoo.
- ----------
-|          |
- ----------
-*/
-func (g *Game) collision(b *ball) (bool, float64) {
+func (g *Game) playerBallCollision(b *ball) (bool, float64) {
 	if b.y+2*b.radius == g.p.y && (b.x <= g.p.x+g.p.w && b.x+2*b.radius >= g.p.x) {
 		var ratio float64
 		r := b.x + 2*b.radius
@@ -108,6 +109,7 @@ func (g *Game) collision(b *ball) (bool, float64) {
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawPlayer(screen)
 	g.drawBalls(screen)
+	g.drawTargets(screen)
 }
 
 func (g *Game) drawPlayer(screen *ebiten.Image) {
@@ -146,6 +148,27 @@ func (g *Game) drawBall(screen *ebiten.Image, b *ball) {
 	}
 }
 
+func (g *Game) drawTargets(screen *ebiten.Image) {
+	for _, t := range g.targets {
+		g.drawTarget(screen, t)
+	}
+}
+
+func (g *Game) drawTarget(screen *ebiten.Image, t *target) {
+	op := &ebiten.DrawImageOptions{}
+
+	red := float64(t.color.R) / 0xff
+	green := float64(t.color.G) / 0xff
+	blue := float64(t.color.B) / 0xff
+	op.ColorM.Translate(red, green, blue, 1)
+
+	op.GeoM.Translate(t.x, t.y)
+
+	if err := screen.DrawImage(t.image, op); err != nil {
+		log.Fatal(err)
+	}
+}
+
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return W_WIDTH, W_HEIGHT
 }
@@ -157,6 +180,7 @@ func (g *Game) Init() {
 }
 
 func (g *Game) initElements() {
+	// Player
 	playerImg, err := ebiten.NewImage(100, 20, ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
@@ -171,6 +195,7 @@ func (g *Game) initElements() {
 		color: color.RGBA{0xff, 0x00, 0x00, 0xff},
 		image: playerImg,
 	}
+	// ball
 	ballImg, err := ebiten.NewImage(20, 20, ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
@@ -185,6 +210,32 @@ func (g *Game) initElements() {
 		color:     color.RGBA{0xff, 0x00, 0xff, 0xff},
 		image:     ballImg,
 	})
+	// targets
+	var x float64 = 10
+	var y float64 = 10
+	w = 92
+	h = 20
+	var padding float64 = 6
+	for row := 0; row < 3; row++ {
+		for column := 0; column < 8; column++ {
+			targetImg, err := ebiten.NewImage(w, h, ebiten.FilterDefault)
+			if err != nil {
+				log.Fatal(err)
+			}
+			g.targets = append(g.targets, &target{
+				x:     x,
+				y:     y,
+				w:     float64(w),
+				h:     float64(h),
+				color: color.RGBA{0xff, 0xff, 0x00, 0xff},
+				image: targetImg,
+			})
+			x += float64(w) + padding
+		}
+		x = 10
+		y += float64(h) + padding
+	}
+
 }
 
 func Start() {
