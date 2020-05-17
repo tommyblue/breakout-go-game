@@ -35,11 +35,11 @@ type Game struct {
 }
 
 func (g *Game) Update(screen *ebiten.Image) error {
-	s_w, s_h := screen.Size()
+	screenW, screenH := screen.Size()
 	var playerDirection float64
 	if ebiten.IsKeyPressed(ebiten.KeyRight) {
 		playerDirection = 1
-		if g.p.x+g.p.w+g.p.speed <= float64(s_w) {
+		if g.p.x+g.p.w+g.p.speed <= float64(screenW) {
 			g.p.x += g.p.speed
 		}
 	} else if ebiten.IsKeyPressed(ebiten.KeyLeft) {
@@ -50,21 +50,21 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		}
 	}
 	for _, b := range g.balls {
-		new_x := b.x + b.direction[0]*b.speed
+		newX := b.x + b.direction[0]*b.speed
 
-		if new_x < 0 || new_x+2*b.radius > float64(s_w) {
+		if newX < 0 || newX+2*b.radius > float64(screenW) {
 			b.direction[0] = -b.direction[0]
 		}
 		b.x += b.direction[0] * b.speed
 
-		new_y := b.y + b.direction[1]*b.speed
+		newY := b.y + b.direction[1]*b.speed
 		collided := g.collision(b)
-		if new_y < 0 || collided {
+		if newY < 0 || collided {
 			b.direction[1] = -b.direction[1]
 			if collided {
 				b.direction[0] += 0.2 * playerDirection
 			}
-		} else if new_y+2*b.radius > float64(s_h) {
+		} else if newY+2*b.radius > float64(screenH) {
 			g.initElements()
 		}
 		b.y += b.direction[1] * b.speed
@@ -131,11 +131,11 @@ func (g *Game) Init() {
 }
 
 func (g *Game) initElements() {
-	i, err := ebiten.NewImage(100, 20, ebiten.FilterDefault)
+	playerImg, err := ebiten.NewImage(100, 20, ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
 	}
-	w, h := i.Size()
+	w, h := playerImg.Size()
 	g.p = &player{
 		w:     float64(w),
 		h:     float64(h),
@@ -143,9 +143,9 @@ func (g *Game) initElements() {
 		y:     float64(W_HEIGHT - h - 20),
 		speed: 15,
 		color: color.RGBA{0xff, 0x00, 0x00, 0xff},
-		image: i,
+		image: playerImg,
 	}
-	b_i, err := ebiten.NewImage(20, 20, ebiten.FilterDefault)
+	ballImg, err := ebiten.NewImage(20, 20, ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -157,7 +157,7 @@ func (g *Game) initElements() {
 		speed:     10,
 		direction: [2]float64{0, 1},
 		color:     color.RGBA{0xff, 0x00, 0xff, 0xff},
-		image:     b_i,
+		image:     ballImg,
 	})
 }
 
