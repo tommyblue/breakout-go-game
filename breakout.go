@@ -64,7 +64,8 @@ func (g *Game) Update(screen *ebiten.Image) error {
 
 		newY := b.y + b.direction[1]*b.speed
 		collided, ratio := g.playerBallCollision(b)
-		if newY < 0 || collided {
+		hit := g.ballHits(b)
+		if newY < 0 || collided || hit {
 			b.direction[1] = -b.direction[1]
 			if collided {
 				b.direction[0] += ratio
@@ -75,6 +76,17 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		b.y += b.direction[1] * b.speed
 	}
 	return nil
+}
+
+func (g *Game) ballHits(b *ball) bool {
+	hit := false
+	for i, t := range g.targets {
+		if b.x+2*b.radius >= t.x && b.x <= t.x+t.w && b.y+2*b.radius >= t.y && b.y <= t.y+t.h {
+			g.targets = append(g.targets[:i], g.targets[i+1:]...)
+			hit = true
+		}
+	}
+	return hit
 }
 
 func (g *Game) playerBallCollision(b *ball) (bool, float64) {
