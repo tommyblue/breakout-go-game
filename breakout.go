@@ -80,9 +80,11 @@ func (g *Game) Update(screen *ebiten.Image) error {
 
 func (g *Game) ballHits(b *ball) bool {
 	hit := false
-	for i, t := range g.targets {
+	for i := 0; i < len(g.targets); i++ {
+		t := g.targets[i]
 		if b.x+2*b.radius >= t.x && b.x <= t.x+t.w && b.y+2*b.radius >= t.y && b.y <= t.y+t.h {
 			g.targets = append(g.targets[:i], g.targets[i+1:]...)
+			i--
 			hit = true
 		}
 	}
